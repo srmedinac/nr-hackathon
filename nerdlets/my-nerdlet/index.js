@@ -1,4 +1,6 @@
 import React from 'react';
+
+import {Grid, GridItem} from 'nr1';
 //import the appropriate NR1 components
 import { Tabs, TabsItem, Spinner, Stack, StackItem, NrqlQuery, navigation, PlatformStateContext, NerdletStateContext, EntityByGuidQuery, AutoSizer } from 'nr1';
 //import our 3rd party libraries for the geo mapping features
@@ -65,11 +67,8 @@ export default class MyNerdlet extends React.Component {
                                     const { duration } = platformUrlState.timeRange;
                                     const durationInMinutes = duration / 1000 / 60;
                                     return (<Tabs>
-                                        <TabsItem label={`Dashboard`} value={1}>
-                                            
-                                        </TabsItem>
-                                        <TabsItem label={`Geographic Info`} value={2}>
-                                            <Stack
+                                        <TabsItem label={`Geographic Info`} value={1}>
+                                        <Stack
                                                 fullWidth
                                                 horizontalType={Stack.HORIZONTAL_TYPE.FILL}
                                                 directionType={Stack.DIRECTION_TYPE.VERTICAL}
@@ -116,8 +115,37 @@ export default class MyNerdlet extends React.Component {
                                                 </StackItem>
                                             </Stack>
                                         </TabsItem>
+                                        <TabsItem label={`Dashboard`} value={2}>
+                                            <Grid>
+                                                <GridItem
+                                                    columnSpan={6}
+                                                    style={{backgroundColor: "#FF0000"}}
+                                                >
+                                                    Six Column Grid Item
+                                                </GridItem>
+                                                <GridItem
+                                                    columnSpan={4}
+                                                    style={{backgroundColor: "#00FF00"}}
+                                                >
+                                                    Four Column Grid Item
+                                                </GridItem>
+                                            </Grid>
+                                        </TabsItem>
                                         <TabsItem label={`GraphQL Info`} value={3}>
-                                            
+                                            <Grid>
+                                                    <GridItem
+                                                        columnSpan={6}
+                                                        style={{backgroundColor: "#FF0000"}}
+                                                    >
+                                                        Six Column Grid Item
+                                                    </GridItem>
+                                                    <GridItem
+                                                        columnSpan={4}
+                                                        style={{backgroundColor: "#00FF00"}}
+                                                    >
+                                                        Four Column Grid Item
+                                                    </GridItem>
+                                                </Grid>
                                         </TabsItem>
                                     </Tabs>);
                                 }}
