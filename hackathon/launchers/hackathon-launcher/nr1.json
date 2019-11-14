@@ -1,7 +1,0 @@
-{
-    "schemaType": "LAUNCHER",
-    "id": "hackathon-launcher",
-    "description": "Describe me",
-    "displayName": "Hackathon",
-    "rootNerdletId": "hackathon-nerdlet"
-}
