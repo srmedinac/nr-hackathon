@@ -1,0 +1,33 @@
+{
+  "private": true,
+  "name": "lab8",
+  "description": "NR1 UI Package lab8",
+  "version": "0.1.0",
+  "scripts": {
+    "start": "nr1 nerdpack:serve",
+    "test": "exit 0"
+  },
+  "nr1": {
+    "uuid": "f5220bcc-5500-4a88-8dfd-445a899b04d0"
+  },
+  "bugs": {
+    "email": "labs@newrelic.com"
+  },
+  "author": "New Relic Labs",
+  "dependencies": {
+    "colormap": "^2.3.1",
+    "leaflet": "^1.5.1",
+    "prop-types": "^15.6.2",
+    "react": "^16.6.3",
+    "react-dom": "^16.6.3",
+    "react-leaflet": "^2.4.0"
+  },
+  "browserslist": [
+    "last 2 versions",
+    "not ie < 11",
+    "not dead"
+  ],
+  "devDependencies": {
+    "file-loader": "^4.1.0"
+  }
+}
