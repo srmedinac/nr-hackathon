@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Grid, GridItem, Stack, StackItem, ChartGroup, AreaChart, BarChart, LineChart, TableChart, PieChart, Button, TextField, Modal, Toast } from 'nr1';
+import { Grid, GridItem, Stack, StackItem, ChartGroup, AreaChart, JsonChart, BarChart, LineChart, TableChart, PieChart, Button, TextField, Modal, Toast } from 'nr1';
 // https://docs.newrelic.com/docs/new-relic-programmable-platform-introduction
 
 export default class Insights extends React.Component {
@@ -28,27 +28,27 @@ export default class Insights extends React.Component {
     render() {
         return <React.Fragment>
             <ChartGroup>
+                <form onSubmit={this.onSubmit}>
+                    <Stack
+                        fullWidth
+                        gapType={Stack.GAP_TYPE.LOOSE}>
+                        <StackItem grow={true}>
+                            <TextField label='Lets get querying' multiline spacingType={[TextField.SPACING_TYPE.LARGE]}
+                                value={this.state.value}
+                                onChange={this.handleChange}
+                            />
+                        </StackItem>
+                    </Stack>
+                </form>
                 <Grid className="grid">
                     <GridItem
-                        columnSpan={12}>
-                        <form onSubmit={this.onSubmit}>
-                            <Stack 
-                            fullWidth
-                            gapType={Stack.GAP_TYPE.LOOSE}>
-                                <StackItem grow={true}>
-                                    <TextField label='Lets get querying' multiline spacingType={[TextField.SPACING_TYPE.LARGE]}
-                                        value={this.state.value}
-                                        onChange={this.handleChange}
-                                    />
-                                </StackItem>
-                            </Stack>
-                        </form>
+                        columnSpan={6}>
                         <Stack
                             fullWidth
                             gapType={Stack.GAP_TYPE.LOOSE}>
                             <StackItem grow>
                                 <AreaChart
-                                    query= {this.state.value}
+                                    query={this.state.value}
                                     accountId={this.accountId}
                                     className="chart"
                                     onClickLine={(line) => {
@@ -58,9 +58,24 @@ export default class Insights extends React.Component {
                             </StackItem>
                         </Stack>
                     </GridItem>
+                    <GridItem
+                        columnSpan={6}>
+                        <Stack
+                            fullWidth
+                            gapType={Stack.GAP_TYPE.LOOSE}>
+                            <StackItem grow>
+                                <JsonChart
+                                    query={this.state.value}
+                                    accountId={this.accountId}
+                                    className="chart" //eslint-disable-line
+
+                                />
+                            </StackItem>
+                        </Stack>
+                    </GridItem>
                 </Grid>
             </ChartGroup>
         </React.Fragment>
     }
 }
-            
+
