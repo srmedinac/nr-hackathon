@@ -1,6 +1,6 @@
-import React from 'react';
+import React, {Fragment}  from 'react';
 
-import {Grid, GridItem} from 'nr1';
+import { Grid, GridItem } from 'nr1';
 //import the appropriate NR1 components
 import { Tabs, TabsItem, Spinner, Stack, StackItem, NrqlQuery, navigation, PlatformStateContext, NerdletStateContext, EntityByGuidQuery, AutoSizer } from 'nr1';
 //import our 3rd party libraries for the geo mapping features
@@ -8,6 +8,10 @@ import { CircleMarker, Map, TileLayer } from 'react-leaflet';
 //import utilities we're going to need
 import SummaryBar from '../../components/summary-bar';
 import JavaScriptErrorSummary from './javascript-error-summary';
+//Import for GraphQL
+import { NerdGraphQuery, EntitiesByNameQuery, EntitiesByDomainTypeQuery, EntityCountQuery, HeadingText, BlockText } from 'nr1';
+//Import for Dropdown GraphQL
+import { Dropdown, DropdownItem, BillboardChart, PieChart } from 'nr1';
 
 
 const COLORS = [
@@ -24,6 +28,9 @@ export default class MyNerdlet extends React.Component {
         super(props);
         this.state = {
             entity: null,
+            accounts: null,
+            selectedAccount: null,
+            entityName: "Demo ASP.NET",
             center: [10.5731, -7.5898],
             zoom: 2
         }
@@ -46,8 +53,99 @@ export default class MyNerdlet extends React.Component {
             }
         });
     }
+
+    //Render for GraphQL
+    _renderTable(data) {
+        console.debug(JSON.stringify(data));
+        const headings = Object.keys(data[0]).filter(k => k != '__typename' && k != 'id' && k != 'tags' && k != 'reporting');
+        return <table className="table">
+            <tbody>
+                <tr>
+                    {headings.map((name, i) => <th key={i}>{name}</th>)}
+                </tr>
+                {data.length > 1 ? data.map((item, i) => {
+                    return <tr key={i}>
+                        {headings.map((name, j) => <td key={j} className="table-data">{item[name]}</td>)}
+                    </tr>
+                }) : <tr>
+                        {headings.map((name, j) => <td key={j} className="table-data">{data[0][name]}</td>)}
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    /**
+     * Build the array of NRQL statements based on the duration from the Time Picker.
+     * Dropfown GraphQL
+     */
+    nrqlChartData(platformUrlState) {
+        const { duration } = platformUrlState.timeRange;
+        const durationInMinutes = duration/1000/60;
+        return [
+            {
+                title: 'Total Transactions',
+                nrql: `SELECT count(*) from Transaction SINCE ${durationInMinutes} MINUTES AGO`
+            },
+            {
+                title: 'JavaScript Errors',
+                nrql: `SELECT count(*) FROM JavaScriptError SINCE ${durationInMinutes} MINUTES AGO COMPARE WITH ${durationInMinutes*2} MINUTES AGO`
+            },
+            {
+                title: 'Mobile Users OS/Platform',
+                nrql: `FROM MobileSession SELECT uniqueCount(uuid) FACET osName, osVersion SINCE ${durationInMinutes} MINUTES AGO`,
+                chartType: 'pie'
+            },
+            {
+                title: 'Infrastructure Count',
+                nrql: `SELECT uniqueCount(entityGuid) as 'Host Count' from SystemSample SINCE ${durationInMinutes} MINUTES AGO COMPARE WITH ${durationInMinutes*2} MINUTES AGO`
+            }
+        ];
+    }
+
+    //Test of Graph in console
+    componentDidMount() {
+        //being verbose for demonstration purposes only
+        const q = NerdGraphQuery.query({ query: `{
+            actor {
+              accounts {
+                id
+                name
+              }
+            }
+          }` });
+        q.then(results => {
+            //logged for learning purposes
+            console.debug(results); //eslint-disable-line
+            const accounts = results.data.actor.accounts.map(account => {
+                return account;
+            });
+            const account = accounts.length > 0 && accounts[0];
+            this.setState({ selectedAccount: account, accounts });
+        }).catch((error) => { console.log(error); })
+    }
+
+    /**
+     * Option contains a label, value, and the account object.
+     * @param {Object} option
+     */
+    selectAccount(option) {
+        this.setState({ selectedAccount: option });
+    }
+
     render() {
         const { zoom, center } = this.state;
+        const { accounts, selectedAccount } = this.state;
+        const {filter} = (this.state || {})
+        
+        if(filter && filter.length > 0) {
+            const re = new RegExp(filter, 'i')
+            accounts = accounts.filter(a => {
+                return a.name.match(re)
+            })
+        }
+
+    if (accounts) {
         return <PlatformStateContext.Consumer>
             {(platformUrlState) => (
                 <NerdletStateContext.Consumer>
@@ -116,36 +214,113 @@ export default class MyNerdlet extends React.Component {
                                             </Stack>
                                         </TabsItem>
                                         <TabsItem label={`Dashboard`} value={2}>
-                                            <Grid>
-                                                <GridItem
-                                                    columnSpan={6}
-                                                    style={{backgroundColor: "#FF0000"}}
-                                                >
-                                                    Six Column Grid Item
-                                                </GridItem>
-                                                <GridItem
-                                                    columnSpan={4}
-                                                    style={{backgroundColor: "#00FF00"}}
-                                                >
-                                                    Four Column Grid Item
-                                                </GridItem>
-                                            </Grid>
+                                            <Stack
+                                                        fullWidth
+                                                        horizontalType={Stack.HORIZONTAL_TYPE.FILL}
+                                                        gapType={Stack.GAP_TYPE.EXTRA_LOOSE}
+                                                        directionType={Stack.DIRECTION_TYPE.VERTICAL}>
+                                                        {selectedAccount &&
+                                                            <StackItem>
+                                                                <Dropdown title={selectedAccount.name} filterable label="Account"
+                                                                    onChangeFilter={(event) => this.setState({filter: event.target.value})}>
+                                                                {accounts.map(a => {
+                                                                    return <DropdownItem key={a.id} onClick={() => this.selectAccount(a)}>
+                                                                    {a.name}
+                                                                    </DropdownItem>
+                                                                })}
+                                                                </Dropdown>
+                                                            </StackItem>
+                                                        }
+                                                        {selectedAccount &&
+                                                            <StackItem>
+                                                                <Stack
+                                                                    fullWidth
+                                                                    horizontalType={Stack.HORIZONTAL_TYPE.FILL}
+                                                                    gapType={Stack.GAP_TYPE.EXTRA_LOOSE}
+                                                                    directionType={Stack.DIRECTION_TYPE.HORIZONTAL}>
+                                                                    {this.nrqlChartData(platformUrlState).map((d, i) => <StackItem key={i} shrink={true}>
+                                                                        <h2>{d.title}</h2>
+                                                                        {d.chartType == 'pie' ? <PieChart
+                                                                            accountId={selectedAccount.id}
+                                                                            query={d.nrql}
+                                                                            className="chart"
+                                                                        /> : <BillboardChart
+                                                                            accountId={selectedAccount.id}
+                                                                            query={d.nrql}
+                                                                            className="chart"
+                                                                        />}
+                                                                    </StackItem>)}
+                                                                </Stack>
+                                                            </StackItem>
+                                                        }
+                                                    </Stack>
+                                                }}
                                         </TabsItem>
                                         <TabsItem label={`GraphQL Info`} value={3}>
-                                            <Grid>
-                                                    <GridItem
-                                                        columnSpan={6}
-                                                        style={{backgroundColor: "#FF0000"}}
-                                                    >
-                                                        Six Column Grid Item
-                                                    </GridItem>
-                                                    <GridItem
-                                                        columnSpan={4}
-                                                        style={{backgroundColor: "#00FF00"}}
-                                                    >
-                                                        Four Column Grid Item
-                                                    </GridItem>
-                                                </Grid>
+                                            <Stack fullWidth
+                                                horizontalType={Stack.HORIZONTAL_TYPE.FILL}
+                                                directionType={Stack.DIRECTION_TYPE.VERTICAL}>
+                                                <StackItem>
+                                                    <div className="container">
+                                                        <NerdGraphQuery query={`{actor {accounts {id name}}}`}>
+                                                            {({loading, error, data}) => {
+                                                                console.debug([loading, data, error]); //eslint-disable-line
+                                                                if (loading) {
+                                                                    return <Spinner/>;
+                                                                }
+                                                                if (error) {
+                                                                    return <BlockText>{error.message}</BlockText>;
+                                                                }
+
+                                                                return <Fragment>
+                                                                        <HeadingText>Accounts</HeadingText>
+                                                                        {this._renderTable(data.actor.accounts)}
+                                                                </Fragment>
+                                                            }}
+                                                        </NerdGraphQuery>
+                                                    </div>
+                                                </StackItem>
+                                                <StackItem className="container">
+                                                    <NerdletStateContext.Consumer>
+                                                    {(nerdletUrlState) => {
+                                                        return <EntityByGuidQuery entityGuid={nerdletUrlState.entityGuid}>
+                                                        {({loading, error, data}) => {
+                                                            console.debug([loading, data, error]); //eslint-disable-line
+                                                            if (loading) {
+                                                                return <Spinner/>;
+                                                            }
+                                                            if (error) {
+                                                                return <HeadingText>{error.message}</HeadingText>;
+                                                            }
+                                                            return <Fragment className="fragment">
+                                                                    <HeadingText>Entity by ID</HeadingText>
+                                                                    {this._renderTable(data.entities)}
+                                                            </Fragment>
+                                                        }}
+                                                    </EntityByGuidQuery>
+
+                                                    }}
+                                                    </NerdletStateContext.Consumer>
+                                                </StackItem>
+                                                <StackItem className="container">
+                                                    <EntitiesByDomainTypeQuery entityDomain="BROWSER" entityType="APPLICATION">
+                                                    {({loading, error, data}) => {
+                                                        console.debug([loading, data, error]); //eslint-disable-line
+                                                        if (loading) {
+                                                            return <Spinner/>;
+                                                        }
+                                                        if (error) {
+                                                            return <BlockText>{JSON.stringify(error)}</BlockText>;
+                                                        }
+                                                        return <Fragment>
+                                                            <HeadingText>Entity by Domain Type</HeadingText>
+                                                            {this._renderTable(data.entities)}
+                                                        </Fragment>
+                                                    }}
+                                                    </EntitiesByDomainTypeQuery>
+                                                </StackItem>
+                                                
+                                            </Stack>
                                         </TabsItem>
                                     </Tabs>);
                                 }}
@@ -155,5 +330,8 @@ export default class MyNerdlet extends React.Component {
                 </NerdletStateContext.Consumer>
             )}
         </PlatformStateContext.Consumer>;
+    } else {
+        return <Spinner/>
+    }    
     }
 }
