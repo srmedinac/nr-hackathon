@@ -11,7 +11,7 @@ import JavaScriptErrorSummary from './javascript-error-summary';
 //Import for GraphQL
 import { NerdGraphQuery, EntitiesByNameQuery, EntitiesByDomainTypeQuery, EntityCountQuery, HeadingText, BlockText } from 'nr1';
 //Import for Dropdown GraphQL
-import { Dropdown, DropdownItem, BillboardChart, PieChart } from 'nr1';
+import { Dropdown, DropdownItem, BillboardChart, PieChart, HistogramChart } from 'nr1';
 
 
 const COLORS = [
@@ -84,21 +84,23 @@ export default class MyNerdlet extends React.Component {
         const durationInMinutes = duration / 1000 / 60;
         return [
             {
-                title: 'Total Transactions',
-                nrql: `SELECT count(*) from Transaction SINCE ${durationInMinutes} MINUTES AGO`
-            },
-            {
-                title: 'JavaScript Errors',
-                nrql: `SELECT count(*) FROM JavaScriptError SINCE ${durationInMinutes} MINUTES AGO COMPARE WITH ${durationInMinutes * 2} MINUTES AGO`
-            },
-            {
-                title: 'Mobile Users OS/Platform',
-                nrql: `FROM MobileSession SELECT uniqueCount(uuid) FACET osName, osVersion SINCE ${durationInMinutes} MINUTES AGO`,
+                title: 'Page Views per City',
+                nrql: `SELECT count(*) FROM PageView WHERE appName = 'Demo ASP.NET' SINCE 1 week ago FACET city`,
                 chartType: 'pie'
             },
             {
-                title: 'Infrastructure Count',
-                nrql: `SELECT uniqueCount(entityGuid) as 'Host Count' from SystemSample SINCE ${durationInMinutes} MINUTES AGO COMPARE WITH ${durationInMinutes * 2} MINUTES AGO`
+                title: 'Response Time Distribution (ms)',
+                nrql: `SELECT histogram(duration,20,20) FROM PageView SINCE yesterday`
+            },
+            {
+                title: 'Engagement by Hour',
+                nrql: `SELECT uniqueCount(session) FROM PageView SINCE 7 days ago FACET hourOf(timestamp)`,
+                chartType: 'pie'
+            },
+            {
+                title: 'Browsers',
+                nrql: `SELECT percentage(uniqueCount(session), WHERE userAgentName = 'IE') AS '% of IE Users', percentage(uniqueCount(session), WHERE userAgentName = 'Chrome') AS '% of Chrome Users', percentage(uniqueCount(session), WHERE userAgentName = 'Firefox') AS '% of Firefox Users', percentage(uniqueCount(session), WHERE userAgentName = 'Safari') AS '% of Safari Users' FROM PageView SINCE 7 days ago`,
+                chartType: 'billboard'
             }
         ];
     }
@@ -241,21 +243,26 @@ export default class MyNerdlet extends React.Component {
                                                                 directionType={Stack.DIRECTION_TYPE.HORIZONTAL}>
                                                                 {this.nrqlChartData(platformUrlState).map((d, i) => <StackItem key={i} shrink={true}>
                                                                     <h2>{d.title}</h2>
-                                                                    {d.chartType == 'pie' ? <PieChart
+                                                                    {(d.chartType == 'pie') ? (<PieChart
                                                                         accountId={selectedAccount.id}
                                                                         query={d.nrql}
                                                                         className="chart"
-                                                                    /> : <BillboardChart
+                                                                    />)
+                                                                        : ((d.chartType == 'billboard') ? (<BillboardChart
                                                                             accountId={selectedAccount.id}
                                                                             query={d.nrql}
                                                                             className="chart"
-                                                                        />}
+                                                                        />) : <HistogramChart
+                                                                        accountId={selectedAccount.id}
+                                                                        query={d.nrql}
+                                                                        className="chart"
+                                                                        />)}
                                                                 </StackItem>)}
                                                             </Stack>
                                                         </StackItem>
                                                     }
                                                 </Stack>
-                                        </TabsItem>
+                                            </TabsItem>
                                             <TabsItem label={`GraphQL Info`} value={3}>
                                                 <Stack fullWidth
                                                     horizontalType={Stack.HORIZONTAL_TYPE.FILL}
