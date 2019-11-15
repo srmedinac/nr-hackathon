@@ -1,4 +1,4 @@
-import React, {Fragment}  from 'react';
+import React, { Fragment } from 'react';
 
 import { Grid, GridItem } from 'nr1';
 //import the appropriate NR1 components
@@ -81,7 +81,7 @@ export default class MyNerdlet extends React.Component {
      */
     nrqlChartData(platformUrlState) {
         const { duration } = platformUrlState.timeRange;
-        const durationInMinutes = duration/1000/60;
+        const durationInMinutes = duration / 1000 / 60;
         return [
             {
                 title: 'Total Transactions',
@@ -89,7 +89,7 @@ export default class MyNerdlet extends React.Component {
             },
             {
                 title: 'JavaScript Errors',
-                nrql: `SELECT count(*) FROM JavaScriptError SINCE ${durationInMinutes} MINUTES AGO COMPARE WITH ${durationInMinutes*2} MINUTES AGO`
+                nrql: `SELECT count(*) FROM JavaScriptError SINCE ${durationInMinutes} MINUTES AGO COMPARE WITH ${durationInMinutes * 2} MINUTES AGO`
             },
             {
                 title: 'Mobile Users OS/Platform',
@@ -98,7 +98,7 @@ export default class MyNerdlet extends React.Component {
             },
             {
                 title: 'Infrastructure Count',
-                nrql: `SELECT uniqueCount(entityGuid) as 'Host Count' from SystemSample SINCE ${durationInMinutes} MINUTES AGO COMPARE WITH ${durationInMinutes*2} MINUTES AGO`
+                nrql: `SELECT uniqueCount(entityGuid) as 'Host Count' from SystemSample SINCE ${durationInMinutes} MINUTES AGO COMPARE WITH ${durationInMinutes * 2} MINUTES AGO`
             }
         ];
     }
@@ -106,7 +106,8 @@ export default class MyNerdlet extends React.Component {
     //Test of Graph in console
     componentDidMount() {
         //being verbose for demonstration purposes only
-        const q = NerdGraphQuery.query({ query: `{
+        const q = NerdGraphQuery.query({
+            query: `{
             actor {
               accounts {
                 id
@@ -136,202 +137,201 @@ export default class MyNerdlet extends React.Component {
     render() {
         const { zoom, center } = this.state;
         const { accounts, selectedAccount } = this.state;
-        const {filter} = (this.state || {})
-        
-        if(filter && filter.length > 0) {
+        const { filter } = (this.state || {})
+
+        if (filter && filter.length > 0) {
             const re = new RegExp(filter, 'i')
             accounts = accounts.filter(a => {
                 return a.name.match(re)
             })
         }
 
-    if (accounts) {
-        return <PlatformStateContext.Consumer>
-            {(platformUrlState) => (
-                <NerdletStateContext.Consumer>
-                    {(nerdletUrlState) => (
-                        <AutoSizer>
-                            {({ height, width }) => (<EntityByGuidQuery entityGuid={nerdletUrlState.entityGuid}>
-                                {({ data, loading, error }) => {
-                                    console.debug("EntityByGuidQuery", [loading, data, error]); //eslint-disable-line
-                                    if (loading) {
-                                        return <Spinner fillContainer />;
-                                    }
-                                    if (error) {
-                                        return <BlockText>{error.message}</BlockText>
-                                    }
-                                    const entity = data.entities[0];
-                                    const { accountId } = entity;
-                                    const { duration } = platformUrlState.timeRange;
-                                    const durationInMinutes = duration / 1000 / 60;
-                                    return (<Tabs>
-                                        <TabsItem label={`Geographic Info`} value={1}>
-                                        <Stack
-                                                fullWidth
-                                                horizontalType={Stack.HORIZONTAL_TYPE.FILL}
-                                                directionType={Stack.DIRECTION_TYPE.VERTICAL}
-                                                gapType={Stack.GAP_TYPE.TIGHT}>
-                                                <StackItem>
-                                                    <SummaryBar appName={entity.name} accountId={accountId} launcherUrlState={platformUrlState} />
-                                                </StackItem>
-                                                <StackItem>
-                                                    <NrqlQuery
-                                                        formatType={NrqlQuery.FORMAT_TYPE.RAW}
-                                                        accountId={accountId}
-                                                        query={`SELECT count(*) as x, average(duration) as y, sum(asnLatitude)/count(*) as lat, sum(asnLongitude)/count(*) as lng FROM PageView WHERE appName = '${entity.name}' facet regionCode, countryCode SINCE ${durationInMinutes} MINUTES AGO limit 2000`}>
-                                                        {results => {
-                                                            console.debug(results);
-                                                            if (results.loading) {
-                                                                return <Spinner />
-                                                            } else {
-                                                                console.debug(results.data.facets);
-                                                                return <Map
-                                                                    className="containerMap"
-                                                                    style={{ height: `${height - 125}px` }}
-                                                                    center={center}
-                                                                    zoom={zoom}
-                                                                    zoomControl={true}
-                                                                    ref={(ref) => { this.mapRef = ref }}>
-                                                                    <TileLayer
-                                                                        attribution="&amp;copy <a href=&quot;http://osm.org/copyright&quot;>OpenStreetMap</a> contributors"
-                                                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                                                    />
-                                                                    {results.data.facets.map((facet, i) => {
-                                                                        const pt = facet.results;
-                                                                        return <CircleMarker
-                                                                            key={`circle-${i}`}
-                                                                            center={[pt[2].result, pt[3].result]}
-                                                                            color={this._getColor(pt[1].average)}
-                                                                            radius={Math.log(pt[0].count) * 3}
-                                                                            onClick={() => { this.openDetails(facet, entity); }}>
-                                                                        </CircleMarker>
-                                                                    })}
-                                                                </Map>
-                                                            }
-                                                        }}
-                                                    </NrqlQuery>
-                                                </StackItem>
-                                            </Stack>
-                                        </TabsItem>
-                                        <TabsItem label={`Dashboard`} value={2}>
-                                            <Stack
-                                                        fullWidth
-                                                        horizontalType={Stack.HORIZONTAL_TYPE.FILL}
-                                                        gapType={Stack.GAP_TYPE.EXTRA_LOOSE}
-                                                        directionType={Stack.DIRECTION_TYPE.VERTICAL}>
-                                                        {selectedAccount &&
-                                                            <StackItem>
-                                                                <Dropdown title={selectedAccount.name} filterable label="Account"
-                                                                    onChangeFilter={(event) => this.setState({filter: event.target.value})}>
+        if (accounts) {
+            return <PlatformStateContext.Consumer>
+                {(platformUrlState) => (
+                    <NerdletStateContext.Consumer>
+                        {(nerdletUrlState) => (
+                            <AutoSizer>
+                                {({ height, width }) => (<EntityByGuidQuery entityGuid={nerdletUrlState.entityGuid}>
+                                    {({ data, loading, error }) => {
+                                        console.debug("EntityByGuidQuery", [loading, data, error]); //eslint-disable-line
+                                        if (loading) {
+                                            return <Spinner fillContainer />;
+                                        }
+                                        if (error) {
+                                            return <BlockText>{error.message}</BlockText>
+                                        }
+                                        const entity = data.entities[0];
+                                        const { accountId } = entity;
+                                        const { duration } = platformUrlState.timeRange;
+                                        const durationInMinutes = duration / 1000 / 60;
+                                        return (<Tabs>
+                                            <TabsItem label={`Geographic Info`} value={1}>
+                                                <Stack
+                                                    fullWidth
+                                                    horizontalType={Stack.HORIZONTAL_TYPE.FILL}
+                                                    directionType={Stack.DIRECTION_TYPE.VERTICAL}
+                                                    gapType={Stack.GAP_TYPE.TIGHT}>
+                                                    <StackItem>
+                                                        <SummaryBar appName={entity.name} accountId={accountId} launcherUrlState={platformUrlState} />
+                                                    </StackItem>
+                                                    <StackItem>
+                                                        <NrqlQuery
+                                                            formatType={NrqlQuery.FORMAT_TYPE.RAW}
+                                                            accountId={accountId}
+                                                            query={`SELECT count(*) as x, average(duration) as y, sum(asnLatitude)/count(*) as lat, sum(asnLongitude)/count(*) as lng FROM PageView WHERE appName = '${entity.name}' facet regionCode, countryCode SINCE ${durationInMinutes} MINUTES AGO limit 2000`}>
+                                                            {results => {
+                                                                console.debug(results);
+                                                                if (results.loading) {
+                                                                    return <Spinner />
+                                                                } else {
+                                                                    console.debug(results.data.facets);
+                                                                    return <Map
+                                                                        className="containerMap"
+                                                                        style={{ height: `${height - 125}px` }}
+                                                                        center={center}
+                                                                        zoom={zoom}
+                                                                        zoomControl={true}
+                                                                        ref={(ref) => { this.mapRef = ref }}>
+                                                                        <TileLayer
+                                                                            attribution="&amp;copy <a href=&quot;http://osm.org/copyright&quot;>OpenStreetMap</a> contributors"
+                                                                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                                                        />
+                                                                        {results.data.facets.map((facet, i) => {
+                                                                            const pt = facet.results;
+                                                                            return <CircleMarker
+                                                                                key={`circle-${i}`}
+                                                                                center={[pt[2].result, pt[3].result]}
+                                                                                color={this._getColor(pt[1].average)}
+                                                                                radius={Math.log(pt[0].count) * 3}
+                                                                                onClick={() => { this.openDetails(facet, entity); }}>
+                                                                            </CircleMarker>
+                                                                        })}
+                                                                    </Map>
+                                                                }
+                                                            }}
+                                                        </NrqlQuery>
+                                                    </StackItem>
+                                                </Stack>
+                                            </TabsItem>
+                                            <TabsItem label={`Dashboard`} value={2}>
+                                                <Stack
+                                                    fullWidth
+                                                    horizontalType={Stack.HORIZONTAL_TYPE.FILL}
+                                                    gapType={Stack.GAP_TYPE.EXTRA_LOOSE}
+                                                    directionType={Stack.DIRECTION_TYPE.VERTICAL}>
+                                                    {selectedAccount &&
+                                                        <StackItem>
+                                                            <Dropdown title={selectedAccount.name} filterable label="Account"
+                                                                onChangeFilter={(event) => this.setState({ filter: event.target.value })}>
                                                                 {accounts.map(a => {
                                                                     return <DropdownItem key={a.id} onClick={() => this.selectAccount(a)}>
-                                                                    {a.name}
+                                                                        {a.name}
                                                                     </DropdownItem>
                                                                 })}
-                                                                </Dropdown>
-                                                            </StackItem>
-                                                        }
-                                                        {selectedAccount &&
-                                                            <StackItem>
-                                                                <Stack
-                                                                    fullWidth
-                                                                    horizontalType={Stack.HORIZONTAL_TYPE.FILL}
-                                                                    gapType={Stack.GAP_TYPE.EXTRA_LOOSE}
-                                                                    directionType={Stack.DIRECTION_TYPE.HORIZONTAL}>
-                                                                    {this.nrqlChartData(platformUrlState).map((d, i) => <StackItem key={i} shrink={true}>
-                                                                        <h2>{d.title}</h2>
-                                                                        {d.chartType == 'pie' ? <PieChart
-                                                                            accountId={selectedAccount.id}
-                                                                            query={d.nrql}
-                                                                            className="chart"
-                                                                        /> : <BillboardChart
+                                                            </Dropdown>
+                                                        </StackItem>
+                                                    }
+                                                    {selectedAccount &&
+                                                        <StackItem>
+                                                            <Stack
+                                                                fullWidth
+                                                                horizontalType={Stack.HORIZONTAL_TYPE.FILL}
+                                                                gapType={Stack.GAP_TYPE.EXTRA_LOOSE}
+                                                                directionType={Stack.DIRECTION_TYPE.HORIZONTAL}>
+                                                                {this.nrqlChartData(platformUrlState).map((d, i) => <StackItem key={i} shrink={true}>
+                                                                    <h2>{d.title}</h2>
+                                                                    {d.chartType == 'pie' ? <PieChart
+                                                                        accountId={selectedAccount.id}
+                                                                        query={d.nrql}
+                                                                        className="chart"
+                                                                    /> : <BillboardChart
                                                                             accountId={selectedAccount.id}
                                                                             query={d.nrql}
                                                                             className="chart"
                                                                         />}
-                                                                    </StackItem>)}
-                                                                </Stack>
-                                                            </StackItem>
-                                                        }
-                                                    </Stack>
-                                                }}
+                                                                </StackItem>)}
+                                                            </Stack>
+                                                        </StackItem>
+                                                    }
+                                                </Stack>
                                         </TabsItem>
-                                        <TabsItem label={`GraphQL Info`} value={3}>
-                                            <Stack fullWidth
-                                                horizontalType={Stack.HORIZONTAL_TYPE.FILL}
-                                                directionType={Stack.DIRECTION_TYPE.VERTICAL}>
-                                                <StackItem>
-                                                    <div className="container">
-                                                        <NerdGraphQuery query={`{actor {accounts {id name}}}`}>
-                                                            {({loading, error, data}) => {
-                                                                console.debug([loading, data, error]); //eslint-disable-line
-                                                                if (loading) {
-                                                                    return <Spinner/>;
-                                                                }
-                                                                if (error) {
-                                                                    return <BlockText>{error.message}</BlockText>;
-                                                                }
+                                            <TabsItem label={`GraphQL Info`} value={3}>
+                                                <Stack fullWidth
+                                                    horizontalType={Stack.HORIZONTAL_TYPE.FILL}
+                                                    directionType={Stack.DIRECTION_TYPE.VERTICAL}>
+                                                    <StackItem>
+                                                        <div className="container">
+                                                            <NerdGraphQuery query={`{actor {accounts {id name}}}`}>
+                                                                {({ loading, error, data }) => {
+                                                                    console.debug([loading, data, error]); //eslint-disable-line
+                                                                    if (loading) {
+                                                                        return <Spinner />;
+                                                                    }
+                                                                    if (error) {
+                                                                        return <BlockText>{error.message}</BlockText>;
+                                                                    }
 
-                                                                return <Fragment>
+                                                                    return <Fragment>
                                                                         <HeadingText>Accounts</HeadingText>
                                                                         {this._renderTable(data.actor.accounts)}
+                                                                    </Fragment>
+                                                                }}
+                                                            </NerdGraphQuery>
+                                                        </div>
+                                                    </StackItem>
+                                                    <StackItem className="container">
+                                                        <NerdletStateContext.Consumer>
+                                                            {(nerdletUrlState) => {
+                                                                return <EntityByGuidQuery entityGuid={nerdletUrlState.entityGuid}>
+                                                                    {({ loading, error, data }) => {
+                                                                        console.debug([loading, data, error]); //eslint-disable-line
+                                                                        if (loading) {
+                                                                            return <Spinner />;
+                                                                        }
+                                                                        if (error) {
+                                                                            return <HeadingText>{error.message}</HeadingText>;
+                                                                        }
+                                                                        return <Fragment className="fragment">
+                                                                            <HeadingText>Entity by ID</HeadingText>
+                                                                            {this._renderTable(data.entities)}
+                                                                        </Fragment>
+                                                                    }}
+                                                                </EntityByGuidQuery>
+
+                                                            }}
+                                                        </NerdletStateContext.Consumer>
+                                                    </StackItem>
+                                                    <StackItem className="container">
+                                                        <EntitiesByDomainTypeQuery entityDomain="BROWSER" entityType="APPLICATION">
+                                                            {({ loading, error, data }) => {
+                                                                console.debug([loading, data, error]); //eslint-disable-line
+                                                                if (loading) {
+                                                                    return <Spinner />;
+                                                                }
+                                                                if (error) {
+                                                                    return <BlockText>{JSON.stringify(error)}</BlockText>;
+                                                                }
+                                                                return <Fragment>
+                                                                    <HeadingText>Entity by Domain Type</HeadingText>
+                                                                    {this._renderTable(data.entities)}
                                                                 </Fragment>
                                                             }}
-                                                        </NerdGraphQuery>
-                                                    </div>
-                                                </StackItem>
-                                                <StackItem className="container">
-                                                    <NerdletStateContext.Consumer>
-                                                    {(nerdletUrlState) => {
-                                                        return <EntityByGuidQuery entityGuid={nerdletUrlState.entityGuid}>
-                                                        {({loading, error, data}) => {
-                                                            console.debug([loading, data, error]); //eslint-disable-line
-                                                            if (loading) {
-                                                                return <Spinner/>;
-                                                            }
-                                                            if (error) {
-                                                                return <HeadingText>{error.message}</HeadingText>;
-                                                            }
-                                                            return <Fragment className="fragment">
-                                                                    <HeadingText>Entity by ID</HeadingText>
-                                                                    {this._renderTable(data.entities)}
-                                                            </Fragment>
-                                                        }}
-                                                    </EntityByGuidQuery>
+                                                        </EntitiesByDomainTypeQuery>
+                                                    </StackItem>
 
-                                                    }}
-                                                    </NerdletStateContext.Consumer>
-                                                </StackItem>
-                                                <StackItem className="container">
-                                                    <EntitiesByDomainTypeQuery entityDomain="BROWSER" entityType="APPLICATION">
-                                                    {({loading, error, data}) => {
-                                                        console.debug([loading, data, error]); //eslint-disable-line
-                                                        if (loading) {
-                                                            return <Spinner/>;
-                                                        }
-                                                        if (error) {
-                                                            return <BlockText>{JSON.stringify(error)}</BlockText>;
-                                                        }
-                                                        return <Fragment>
-                                                            <HeadingText>Entity by Domain Type</HeadingText>
-                                                            {this._renderTable(data.entities)}
-                                                        </Fragment>
-                                                    }}
-                                                    </EntitiesByDomainTypeQuery>
-                                                </StackItem>
-                                                
-                                            </Stack>
-                                        </TabsItem>
-                                    </Tabs>);
-                                }}
-                            </EntityByGuidQuery>)}
-                        </AutoSizer>
-                    )}
-                </NerdletStateContext.Consumer>
-            )}
-        </PlatformStateContext.Consumer>;
-    } else {
-        return <Spinner/>
-    }    
+                                                </Stack>
+                                            </TabsItem>
+                                        </Tabs>);
+                                    }}
+                                </EntityByGuidQuery>)}
+                            </AutoSizer>
+                        )}
+                    </NerdletStateContext.Consumer>
+                )}
+            </PlatformStateContext.Consumer>;
+        } else {
+            return <Spinner />
+        }
     }
 }
